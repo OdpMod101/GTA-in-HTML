@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GTA VI: Leonida Nights (HTML Edition)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0d0221;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* Ekran startowy & Wasted */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(25, 10, 45, 0.88), rgba(8, 2, 18, 0.96));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      text-align: center;
+      padding: 20px;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .logo {
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: 3px;
+      margin: 0;
+      background: linear-gradient(135deg, #ff2a85, #ff7b00, #00f0ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 20px rgba(255, 42, 133, 0.6));
+      text-transform: uppercase;
+    }
+    .subtitle {
+      font-size: 1.2rem;
+      letter-spacing: 6px;
+      color: #00f0ff;
+      text-shadow: 0 0 10px #00f0ff;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+    }
+    .controls-box {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 12px;
+      padding: 18px 28px;
+      margin-bottom: 28px;
+      max-width: 520px;
+      text-align: left;
+      line-height: 1.7;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+    }
+    .controls-box b {
+      color: #ff4da6;
+    }
+    .btn {
+      padding: 14px 42px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #fff;
+      background: linear-gradient(90deg, #ff2a85, #ff7b00);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(255, 42, 133, 0.65);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.8);
+    }
+
+    /* HUD */
+    #hud {
+      position: fixed;
+      top: 18px;
+      right: 22px;
+      text-align: right;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .hud-money {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #4eff91;
+      text-shadow: 2px 2px 0 #000, 0 0 12px rgba(78, 255, 145, 0.5);
+    }
+    .hud-stars {
+      font-size: 1.7rem;
+      letter-spacing: 4px;
+      margin: 4px 0 8px;
+      text-shadow: 2px 2px 0 #000;
+    }
+    .star-active {
+      color: #ffd000;
+      filter: drop-shadow(0 0 8px #ff6600);
+    }
+    .star-inactive {
+      color: rgba(255, 255, 255, 0.2);
+    }
+    .hp-wrap {
+      width: 190px;
+      height: 14px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid #fff;
+      border-radius: 7px;
+      margin-left: auto;
+      overflow: hidden;
+    }
+    #hp-bar {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff2a85, #00f0ff);
+      transition: width 0.15s;
+    }
+    .hud-info {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #e0e0e0;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    /* Radio & Powiadomienia */
+    #radio-banner {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 5, 30, 0.85);
+      border: 2px solid #ff2a85;
+      border-radius: 30px;
+      padding: 8px 24px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #00f0ff;
+      box-shadow: 0 0 20px rgba(255, 42, 133, 0.5);
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    #mission-hint {
+      position: fixed;
+      bottom: 20px;
+      right: 22px;
+      background: rgba(0, 0, 0, 0.65);
+      border-left: 4px solid #ffd000;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .wasted-title {
+      font-size: 5rem;
+      font-weight: 900;
+      color: #ff2a55;
+      letter-spacing: 8px;
+      text-shadow: 0 0 30px rgba(255, 42, 85, 0.9);
+      margin: 0 0 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-money" id="money">$0</div>
+    <div class="hud-stars" id="stars"></div>
+    <div class="hp-wrap"><div id="hp-bar"></div></div>
+    <div class="hud-info" id="vehicle-info">Pieszo | [E] Wsiądź do auta</div>
+  </div>
+
+  <div id="radio-banner">📻 RADIO: VICE NEON FM</div>
+  <div id="mission-hint" class="hidden">🎯 Zbieraj złote walizki ($), kradnij auta i uciekaj policji!</div>
+
+  <!-- Ekran startowy -->
+  <div id="start-screen" class="overlay">
+    <h1 class="logo">GTA VI</h1>
+    <div class="subtitle">Leonida Nights • HTML Edition</div>
+    <div class="controls-box">
+      <div><b>W A S D / Strzałki</b> – Poruszanie się / Jazda autem</div>
+      <div><b>Mysz + Lewy Klik</b> – Celowanie i strzelanie (także z auta!)</div>
+      <div><b>E</b> lub <b>F</b> – Wsiądź / Wysiądź z samochodu</div>
+      <div><b>Spacja</b> – Hamulec ręczny / Drift (w aucie)</div>
+      <div><b>Shift</b> – Sprint (pieszo) / Nitro (w autach sportowych)</div>
+      <div><b>R</b> – Zmiana stacji radiowej &nbsp;|&nbsp; <b>M</b> – Dźwięk ON/OFF</div>
+    </div>
+    <button class="btn" id="start-btn">Wejdź do Leonidy</button>
+  </div>
+
+  <!-- Ekran WASTED -->
+  <div id="wasted-screen" class="overlay hidden">
+    <h1 class="wasted-title">WASTED</h1>
+    <p id="final-stats" style="font-size: 1.2rem; margin-bottom: 25px; color: #ccc;"></p>
+    <button class="btn" id="restart-btn">Zagraj ponownie</button>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  // Elementy UI
+  const startScreen = document.getElementById('start-screen');
+  const wastedScreen = document.getElementById('wasted-screen');
+  const hud = document.getElementById('hud');
+  const missionHint = document.getElementById('mission-hint');
+  const moneyEl = document.getElementById('money');
+  const starsEl = document.getElementById('stars');
+  const hpBarEl = document.getElementById('hp-bar');
+  const vehicleInfoEl = document.getElementById('vehicle-info');
+  const radioBanner = document.getElementById('radio-banner');
+  const finalStatsEl = document.getElementById('final-stats');
+
+  // Rozmiar świata
+  const WORLD_W = 3200;
+  const WORLD_H = 2600;
+  const BEACH_X = 2450;
+  const OCEAN_X = 2780;
+
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  });
+
+  // Web Audio API - prosty syntezator efektów
+  let audioCtx = null;
+  let soundEnabled = true;
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playSound(type) {
+    if (!soundEnabled || !audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'shoot') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(60, now + 0.09);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } else if (type === 'cash') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(650, now);
+      osc.frequency.setValueAtTime(980, now + 0.06);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    } else if (type === 'crash') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(110, now);
+      osc.frequency.exponentialRampToValueAtTime(35, now + 0.15);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } else if (type === 'explosion') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(95, now);
+      osc.frequency.exponentialRampToValueAtTime(20, now + 0.45);
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      osc.start(now);
+      osc.stop(now + 0.45);
+    } else if (type === 'car_enter') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    }
+  }
+
+  // Radio
+  const radioStations = [
+    '📻 VICE NEON FM — Synthwave 80s',
+    '📻 LEONIDA HEAT — Hip-Hop & Trap',
+    '📻 OCEAN DRIVE — Chill & Funk',
+    '📻 ROCK STAR 106.9 — Classic Rock',
+    '🔇 RADIO WYŁĄCZONE'
+  ];
+  let currentStation = 0;
+  let radioTimer = null;
+  function switchRadio() {
+    currentStation = (currentStation + 1) % radioStations.length;
+    radioBanner.textContent = radioStations[currentStation];
+    radioBanner.style.opacity = '1';
+    clearTimeout(radioTimer);
+    radioTimer = setTimeout(() => {
+      radioBanner.style.opacity = '0';
+    }, 2600);
+  }
+
+  // Sterowanie
+  const keys = {};
+  const mouse = { x: width / 2, y: height / 2, down: false };
+
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    keys[k] = true;
+    if (!gameRunning) return;
+    if (k === 'e' || k === 'f') toggleVehicle();
+    if (k === 'r') switchRadio();
+    if (k === 'm') soundEnabled = !soundEnabled;
+  });
+  window.addEventListener('keyup', (e) => {
+    keys[e.key.toLowerCase()] = false;
+  });
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+  window.addEventListener('mousedown', () => { mouse.down = true; });
+  window.addEventListener('mouseup', () => { mouse.down = false; });
+
+  // Stan gry
+  let gameRunning = false;
+  let buildings = [];
+  let palmTrees = [];
+  let roads = { v: [], h: [] };
+  let cars = [];
+  let peds = [];
+  let bullets = [];
+  let particles = [];
+  let pickups = [];
+  let skidMarks = [];
+  let camera = { x: 0, y: 0, zoom: 1, shake: 0 };
+
+  let player = {};
+  let wantedDecayTimer = 0;
+  let copSpawnTimer = 0;
+  let timeElapsed = 0;
+
+  // Generowanie miasta (Vice City / Leonida vibe)
+  function generateWorld() {
+    buildings = [];
+    palmTrees = [];
+    roads = { v: [220, 740, 1260, 1780, 2300], h: [220, 740, 1260, 1780, 2300] };
+
+    const neonColors = ['#ff2a85', '#00f0ff', '#ff7b00', '#b829ff', '#4eff91'];
+    const roofColors = ['#1f1638', '#251a40', '#19223d', '#2d1935', '#1c2b3a'];
+
+    // Bloki miejskie pomiędzy drogami
+    for (let ix = 0; ix < roads.v.length - 1; ix++) {
+      for (let iy = 0; iy < roads.h.length - 1; iy++) {
+        const bx = roads.v[ix] + 75;
+        const by = roads.h[iy] + 75;
+        const bw = roads.v[ix + 1] - roads.v[ix] - 150;
+        const bh = roads.h[iy + 1] - roads.h[iy] - 150;
+
+        // W każdym bloku 1 lub 2 budynki albo park
+        if ((ix + iy) % 5 === 2) {
+          // Park z palmami
+          for (let p = 0; p < 6; p++) {
+            palmTrees.push({
+              x: bx + 40 + Math.random() * (bw - 80),
+              y: by + 40 + Math.random() * (bh - 80),
+              r: 22 + Math.random() * 10
+            });
+          }
+        } else {
+          const split = Math.random() > 0.45;
+          if (split) {
+            const w1 = bw * 0.46;
+            buildings.push({
+              x: bx, y: by, w: w1, h: bh,
+              color: roofColors[(ix + iy) % roofColors.length],
+              neon: neonColors[(ix * 3 + iy) % neonColors.length],
+              height: 16 + Math.random() * 18
+            });
+            buildings.push({
+              x: bx + bw - w1, y: by, w: w1, h: bh,
+              color: roofColors[(ix + iy + 2) % roofColors.length],
+              neon: neonColors[(ix + iy * 2) % neonColors.length],
+              height: 14 + Math.random() * 20
+            });
+          } else {
+            buildings.push({
+              x: bx, y: by, w: bw, h: bh,
+              color: roofColors[(ix + iy) % roofColors.length],
+              neon: neonColors[(ix + iy) % neonColors.length],
+              height: 20 + Math.random() * 22
+            });
+          }
+        }
+      }
+    }
+
+    // Palmy wzdłuż plaży
+    for (let y = 120; y < WORLD_H - 120; y += 130) {
+      palmTrees.push({
+        x: BEACH_X + 45 + Math.random() * 60,
+        y: y + (Math.random() - 0.5) * 40,
+        r: 24 + Math.random() * 8
+      });
+    }
+  }
+
+  function createCar(x, y, type = 'sedan', angle = 0) {
+    const specs = {
+      sport:  { name: 'Cheetah VI', maxSpeed: 10.5, accel: 0.34, turn: 0.068, hp: 130, w: 46, h: 24, colors: ['#ff2a85', '#00f0ff', '#ffd000', '#ff5500'] },
+      muscle: { name: 'Sabre Turbo', maxSpeed: 9.2, accel: 0.30, turn: 0.060, hp: 160, w: 48, h: 25, colors: ['#8c1aff', '#ff3b30', '#1eff8e'] },
+      sedan:  { name: 'Leonida Sedan', maxSpeed: 7.8, accel: 0.24, turn: 0.055, hp: 120, w: 44, h: 23, colors: ['#d8e2dc', '#4cc9f0', '#f72585', '#b5179e', '#fca311'] },
+      cop:    { name: 'VCPD Cruiser', maxSpeed: 9.8, accel: 0.31, turn: 0.065, hp: 150, w: 46, h: 24, colors: ['#111827'] }
+    };
+    const s = specs[type];
+    const color = s.colors[Math.floor(Math.random() * s.colors.length)];
+    return {
+      x, y, angle,
+      speed: 0,
+      maxSpeed: s.maxSpeed,
+      accel: s.accel,
+      turn: s.turn,
+      hp: s.hp,
+      maxHp: s.hp,
+      w: s.w,
+      h: s.h,
+      color,
+      type,
+      name: s.name,
+      driver: null, // null | 'player' | 'npc' | 'cop'
+      sirenPhase: Math.random() * 10
+    };
+  }
+
+  function spawnInitialEntities() {
+    cars = [];
+    peds = [];
+    bullets = [];
+    particles = [];
+    pickups = [];
+    skidMarks = [];
+
+    // Auta na ulicach + kilka zaparkowanych sportowych
+    const sportSpots = [
+      { x: 740, y: 700, t: 'sport' },
+      { x: 1260, y: 1200, t: 'sport' },
+      { x: 2320, y: 800, t: 'muscle' },
+      { x: 1780, y: 1740, t: 'sport' }
+    ];
+    sportSpots.forEach(sp => cars.push(createCar(sp.x, sp.y, sp.t, Math.random() * Math.PI * 2)));
+
+    // Ruch uliczny
+    for (let i = 0; i < 24; i++) {
+      const horiz = Math.random() > 0.5;
+      let x, y, angle;
+      if (horiz) {
+        y = roads.h[Math.floor(Math.random() * roads.h.length)] + (Math.random() > 0.5 ? 25 : -25);
+        x = 150 + Math.random() * 2100;
+        angle = (y % 50 < 25) ? 0 : Math.PI;
+      } else {
+        x = roads.v[Math.floor(Math.random() * roads.v.length)] + (Math.random() > 0.5 ? 25 : -25);
+        y = 150 + Math.random() * 2100;
+        angle = Math.random() > 0.5 ? Math.PI / 2 : -Math.PI / 2;
+      }
+      const types = ['sedan', 'sedan', 'muscle', 'sport'];
+      const car = createCar(x, y, types[Math.floor(Math.random() * types.length)], angle);
+      car.driver = 'npc';
+      car.speed = 2.5 + Math.random() * 1.8;
+      cars.push(car);
+    }
+
+    // Przechodnie
+    const pedColors = ['#ff7eb9', '#7afcff', '#feff9c', '#fff740', '#ff65a3', '#a8ff78'];
+    for (let i = 0; i < 55; i++) {
+      const px = 120 + Math.random() * (BEACH_X + 180);
+      const py = 120 + Math.random() * (WORLD_H - 240);
+      if (!pointInAnyBuilding(px, py, 16)) {
+        peds.push({
+          x: px, y: py,
+          angle: Math.random() * Math.PI * 2,
+          hp: 40,
+          color: pedColors[Math.floor(Math.random() * pedColors.length)],
+          panic: 0,
+          changeTimer: Math.random() * 120
+        });
+      }
+    }
+
+    // Walizki z gotówką & apteczki
+    for (let i = 0; i < 16; i++) spawnPickup('cash');
+    for (let i = 0; i < 6; i++) spawnPickup('health');
+  }
+
+  function spawnPickup(type, customX, customY) {
+    let x = customX, y = customY;
+    if (x === undefined) {
+      for (let tries = 0; tries < 20; tries++) {
+        x = 160 + Math.random() * (BEACH_X + 120);
+        y = 160 + Math.random() * (WORLD_H - 320);
+        if (!pointInAnyBuilding(x, y, 20)) break;
+      }
+    }
+    pickups.push({
+      x, y, type,
+      value: type === 'cash' ? (250 + Math.floor(Math.random() * 4) * 250) : 40,
+      bob: Math.random() * Math.PI * 2
+    });
+  }
+
+  function resetGame() {
+    generateWorld();
+    spawnInitialEntities();
+
+    player = {
+      x: 740,
+      y: 740,
+      angle: 0,
+      hp: 100,
+      maxHp: 100,
+      money: 500,
+      wanted: 0,
+      inCar: null,
+      shootCooldown: 0,
+      kills: 0,
+      carsStolen: 0
+    };
+
+    // Postaw fajne auto tuż obok gracza na start
+    const starterCar = createCar(790, 740, 'sport', -Math.PI / 2);
+    cars.push(starterCar);
+
+    camera.x = player.x;
+    camera.y = player.y;
+    camera.zoom = 1;
+    wantedDecayTimer = 0;
+    copSpawnTimer = 0;
+    timeElapsed = 0;
+    updateHUD();
+  }
+
+  // Kolizje z budynkami
+  function pointInRect(px, py, r, pad = 0) {
+    return px > r.x - pad && px < r.x + r.w + pad && py > r.y - pad && py < r.y + r.h + pad;
+  }
+
+  function pointInAnyBuilding(px, py, pad = 0) {
+    for (let i = 0; i < buildings.length; i++) {
+      if (pointInRect(px, py, buildings[i], pad)) return buildings[i];
+    }
+    return null;
+  }
+
+  function addParticles(x, y, color, count = 8, speed = 3, size = 4) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = Math.random() * speed;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 18 + Math.random() * 18,
+        maxLife: 36,
+        color,
+        size: size * (0.6 + Math.random() * 0.8)
+      });
+    }
+  }
+
+  function addCrime(level = 1) {
+    if (player.wanted < 5) {
+      player.wanted = Math.min(5, player.wanted + level);
+    }
+    wantedDecayTimer = 600; // ~10 sekund spokoju na spadek gwiazdki
+  }
+
+  function toggleVehicle() {
+    if (player.inCar) {
+      // Wysiadanie
+      const car = player.inCar;
+      car.driver = null;
+      const exitAngle = car.angle - Math.PI / 2;
+      player.x = car.x + Math.cos(exitAngle) * 34;
+      player.y = car.y + Math.sin(exitAngle) * 34;
+      // Upewnij się że nie wysiadamy w budynek
+      if (pointInAnyBuilding(player.x, player.y, 12)) {
+        player.x = car.x;
+        player.y = car.y;
+      }
+      player.inCar = null;
+      playSound('car_enter');
+    } else {
+      // Szukaj najbliższego auta w zasięgu 65 px
+      let best = null;
+      let bestDist = 65;
+      for (const c of cars) {
+        const d = Math.hypot(c.x - player.x, c.y - player.y);
+        if (d < bestDist) {
+          bestDist = d;
+          best = c;
+        }
+      }
+      if (best) {
+        if (best.driver === 'npc' || best.driver === 'cop') {
+          if (best.driver === 'cop') addCrime(2);
+          else if (Math.random() > 0.35) addCrime(1);
+          // Wyrzuć kierowcę jako przechodnia
+          peds.push({
+            x: best.x + 30, y: best.y + 30,
+            angle: Math.random() * Math.PI * 2,
+            hp: 40, color: '#ff9f1c', panic: 180, changeTimer: 40
+          });
+        }
+        best.driver = 'player';
+        player.inCar = best;
+        player.carsStolen++;
+        playSound('car_enter');
+      }
+    }
+  }
+
+  function shootBullet(x, y, angle, owner) {
+    bullets.push({
+      x: x + Math.cos(angle) * 20,
+      y: y + Math.s
+    // code main in Poland by gemini ai studio. no more USING GOOGLE
